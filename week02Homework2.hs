@@ -34,8 +34,8 @@ import           Prelude              (IO, Semigroup (..), String, undefined)
 import           Text.Printf          (printf)
 
 data MyRedeemer = MyRedeemer
-    { n = flag1 :: Bool
-    , r = flag2 :: Bool
+    { flag1 :: Bool
+    , flag2 :: Bool
     } deriving (Generic, FromJSON, ToJSON, ToSchema)
 
 PlutusTx.unstableMakeIsData ''MyRedeemer
@@ -43,7 +43,7 @@ PlutusTx.unstableMakeIsData ''MyRedeemer
 {-# INLINABLE mkValidator #-}
 -- This should validate if and only if the two Booleans in the redeemer are equal!
 mkValidator :: () -> MyRedeemer -> ScriptContext -> Bool
-mkValidator _ (n,r) _ = traceIfFalse "Unmatched Reddemer's" $  n == r
+mkValidator _ MyRedeemer {flag1, flag2} _ = traceIfFalse "Unmatched Reddemer's" $  flag1 == flag2
 
 data Typed
 instance Scripts.ValidatorTypes Typed where
