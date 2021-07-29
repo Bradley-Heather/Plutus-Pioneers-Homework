@@ -125,6 +125,8 @@ endpoints = (give' `select` grab') >> endpoints
     give' = endpoint @"give" >>= give
     grab' = endpoint @"grab" >>  grab
 
+-- Playground support
+
 mkSchemaDefinitions ''VestingSchema
 
 mkKnownCurrencies []
