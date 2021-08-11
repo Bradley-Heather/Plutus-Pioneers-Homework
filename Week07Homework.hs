@@ -143,6 +143,9 @@ final _        = False
 check :: ByteString -> ByteString -> ByteString -> GameDatum -> GameRedeemer -> ScriptContext -> Bool
 check bsRock' bsPaper' bsScissors' (GameDatum bs (Just c)) (RevealDraw nonce _) _ =
     sha2_256 (nonce `concatenate`  if c == Rock then bsRock' else if c == Paper then bsPaper' else bsScissors') ==  bs 
+    
+check bsRock' bsPaper' bsScissors' (GameDatum bs (Just _)) (RevealDraw nonce c) _ =
+    sha2_256 (nonce `concatenate`  if c == Rock then bsRock' else if c == Paper then bsPaper' else bsScissors') ==  bs 
 
 check _       _       _            _                       _                _     = True
 
