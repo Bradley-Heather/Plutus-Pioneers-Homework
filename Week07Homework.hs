@@ -284,7 +284,7 @@ secondGame sp = do
 
                 m' <- mapError' $ getOnChainState client
                 case m' of
-                    Nothing -> logInfo @String "first player Won or Drew"
+                    Nothing -> logInfo @String "Second player didn't win"
 
                     Just _  -> do
                         logInfo @String "first player didn't reveal"
