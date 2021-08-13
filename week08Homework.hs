@@ -34,7 +34,7 @@ import           Ledger.Ada                   as Ada
 import           Ledger.Constraints           as Constraints
 import qualified Ledger.Typed.Scripts         as Scripts
 import           Ledger.Value
-import           Prelude                      (Semigroup (..), Show (..), uncurry)
+import           Prelude                      (Semigroup (..), Show (..))
 import qualified Prelude
 
 data TokenSale = TokenSale
@@ -51,7 +51,7 @@ data TSRedeemer =
     | BuyTokens Integer
     | Withdraw Integer Integer
     | Close
-    deriving (Show, Prelude.Eq)
+    deriving (Show, Generic, FromJSON, ToJSON, Prelude.Eq)
 
 PlutusTx.unstableMakeIsData ''TSRedeemer
 
@@ -140,29 +140,14 @@ startTS token useTT = do
     tell $ Last $ Just ts
     logInfo $ "started token sale " ++ show ts
 
-setPrice :: TokenSale -> Integer -> Contract w s Text ()
-setPrice ts p = void $ mapErrorSM $ runStep (tsClient ts) $ SetPrice p
-
-addTokens :: TokenSale -> Integer -> Contract w s Text ()
-addTokens ts n = void $ mapErrorSM $ runStep (tsClient ts) $ AddTokens n
-
-buyTokens :: TokenSale -> Integer -> Contract w s Text ()
-buyTokens ts n = void $ mapErrorSM $ runStep (tsClient ts) $ BuyTokens n
-
-withdraw :: TokenSale -> Integer -> Integer -> Contract w s Text ()
-withdraw ts n l = void $ mapErrorSM $ runStep (tsClient ts) $ Withdraw n l
-
-close :: TokenSale -> Contract w s Text ()
-close ts = void $ mapErrorSM $ runStep (tsClient ts) $ Close
+interact :: TokenSale -> TSRedeemer -> Contract w s Text ()
+interact ts r = void $ mapErrorSM $ runStep (tsClient ts) r
 
 type TSStartSchema =
         Endpoint "start"      (CurrencySymbol, TokenName, Bool)
 type TSUseSchema =
-        Endpoint "set price"  Integer
-    .\/ Endpoint "add tokens" Integer
-    .\/ Endpoint "buy tokens" Integer
-    .\/ Endpoint "withdraw"   (Integer, Integer)
-    .\/ Endpoint "close"      TokenSale
+        Endpoint "interact"   TSRedeemer
+ 
 
 startEndpoint :: Contract (Last TokenSale) TSStartSchema Text ()
 startEndpoint = forever
@@ -174,11 +159,6 @@ useEndpoints :: TokenSale -> Contract () TSUseSchema Text ()
 useEndpoints ts = forever
                 $ handleError logError
                 $ awaitPromise
-                $ setPrice' `select` addTokens' `select` buyTokens' `select` withdraw' `select` close'
+                $ interact' 
   where
-    setPrice'  = endpoint @"set price"  $ setPrice ts
-    addTokens' = endpoint @"add tokens" $ addTokens ts
-    buyTokens' = endpoint @"buy tokens" $ buyTokens ts
-    withdraw'  = endpoint @"withdraw"   $ uncurry (withdraw ts)
-    close'     = endpoint @"close"      $ close
-    
+    interact'  = endpoint @"interact"  $ interact ts
